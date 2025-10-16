@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { AuthRoutes } from "./auth.routes";
+import { DashboardRoutes } from "./dashboard.routes";
 
 // import { AuthRoutes } from "./auth/routes";
 // import { BrandRoutes } from "./brands/routes";
@@ -20,6 +21,7 @@ export class AppRoutes {
         const router = Router();
         // router.use('/api/users', UserRoutes.routes);
         router.use('/api/auth', AuthRoutes.routes);
+        router.use('/api/dashboard', DashboardRoutes.routes);
         // router.use('/api/brands', BrandRoutes.routes);
         // router.use('/api/provinces', ProvinceRoutes.routes);
         // router.use('/api/cities', CityRoutes.routes);
