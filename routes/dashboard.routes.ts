@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { DashboardController } from "../controllers/dashboard.controller";
 import { DashboardService } from "../services/dashboard.service";
+import { AuthMiddlware } from '../middlewares/auth.middleware';
 
 export class DashboardRoutes {
 
@@ -10,7 +11,7 @@ export class DashboardRoutes {
         const dashboardService = new DashboardService();
         const dashboardController = new DashboardController(dashboardService);
         
-        router.get('/', dashboardController.getDashboardStats);
+        router.get('/', AuthMiddlware.validateJWT, dashboardController.getDashboardStats);
         return router;
     }
 }
