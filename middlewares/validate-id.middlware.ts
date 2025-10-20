@@ -25,4 +25,18 @@ export class ValidateIdMiddlware {
         }
         next();
     }
+
+    static validateIdParam(paramName: string): any {
+        return (req: Request, res: Response, next: NextFunction): any => {
+            const value = req.params[paramName];
+            if (!value || isNaN(+value) || Number(value) <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: `${value} is not valid`,
+                    error: 'ValidationError'
+                })
+            }
+            next();
+        }
+    }
 }
