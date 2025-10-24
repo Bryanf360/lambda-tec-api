@@ -1,6 +1,7 @@
 export * from './create-brand.dto';
 export * from './create-model.dto';
 export * from './create-part-number.dto';
+export * from './create-product.dto';
 export * from './create-unit-type.dto';
 export * from './create-user.dto';
 export * from './login-user.dto';
@@ -8,5 +9,6 @@ export * from './pagination.dto';
 export * from './update-brand.dto';
 export * from './update-model.dto';
 export * from './update-part-nubmer.dto';
+export * from './update-product.dto';
 export * from './update-unit-type.dto';
 export * from './update-user.dto';
