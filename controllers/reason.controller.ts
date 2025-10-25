@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ReasonService } from '../services';
 import { CreateReasonDto, PaginationDto, UpdateReasonDto } from '../dtos';
 import { handleError } from '../utils';
+import { reasons_type } from '@prisma/client';
 
 export class ReasonController {
     constructor(private readonly reasonService: ReasonService) {}
@@ -27,8 +28,9 @@ export class ReasonController {
             .catch((error) => handleError(error, res));
     };
 
-    public getReasons = async (req: Request, res: Response): Promise<any> => {
+    public getReasonsByType = async (req: Request, res: Response): Promise<any> => {
         const { page = 1, limit = 10 } = req.query;
+        const { type } = req.params;
         const [error, paginationDto] = PaginationDto.create(+page, +limit);
         if (error)
             return res.status(400).json({
@@ -37,7 +39,7 @@ export class ReasonController {
                 error: 'ValidationError',
             });
         this.reasonService
-            .getReasons(paginationDto!)
+            .getReasonsByType(type as reasons_type, paginationDto!)
             .then((result) =>
                 res.status(200).json({
                     success: true,

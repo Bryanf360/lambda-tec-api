@@ -1,4 +1,4 @@
-import { reasons as Reason } from '@prisma/client';
+import { reasons as Reason, reasons_type } from '@prisma/client';
 
 import { prisma } from '../prisma/client';
 import { CustomError } from '../utils';
@@ -67,18 +67,20 @@ export class ReasonService {
         });
     }
 
-    public async getReasons(paginationDto: PaginationDto): Promise<any> {
+    public async getReasonsByType(type: reasons_type, paginationDto: PaginationDto): Promise<any> {
         const { page, limit } = paginationDto;
         try {
             const [total, reasons] = await Promise.all([
                 prisma.reasons.count({
                     where: {
                         is_deleted: false,
+                        type: type,
                     },
                 }),
                 prisma.reasons.findMany({
                     where: {
                         is_deleted: false,
+                        type: type,
                     },
                     select: {
                         id: true,
@@ -95,8 +97,11 @@ export class ReasonService {
                     page: page,
                     limit: limit,
                     total: total,
-                    prev: page - 1 > 0 ? `/api/reasons?page=${page - 1}&limit=${limit}` : null,
-                    next: `/api/reasons?page=${page + 1}&limit=${limit}`,
+                    prev:
+                        page - 1 > 0
+                            ? `/api/reasons/type/input?page=${page - 1}&limit=${limit}`
+                            : null,
+                    next: `/api/reasons/type/input?page=${page + 1}&limit=${limit}`,
                 },
                 data: reasons,
             };
