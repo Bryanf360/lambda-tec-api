@@ -7,6 +7,7 @@ import { ModelRoutes } from './model.routes';
 import { UnitTypeRoutes } from './unit-type.routes';
 import { PartNumberRoutes } from './part-number.routes';
 import { ProductRoutes } from './product.routes';
+import { ReasonRoutes } from './reason.routes';
 
 // import { AuthRoutes } from "./auth/routes";
 // import { BrandRoutes } from "./brands/routes";
@@ -32,9 +33,9 @@ export class AppRoutes {
         router.use('/api/part-numbers', PartNumberRoutes.routes);
         router.use('/api/unit-types', UnitTypeRoutes.routes);
         router.use('/api/products', ProductRoutes.routes);
+        router.use('/api/reasons', ReasonRoutes.routes);
         // router.use('/api/provinces', ProvinceRoutes.routes);
         // router.use('/api/cities', CityRoutes.routes);
-        // router.use('/api/reasons', ReasonRoutes.routes);
         // router.use('/api/companies', CompanyRoutes.routes);
         // router.use('/api/warehouses', WarehouseRoutes.routes);
         return router;
