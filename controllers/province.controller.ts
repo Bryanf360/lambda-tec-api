@@ -19,10 +19,20 @@ export class ProvinceController {
     public getProvinces = async (req: Request, res: Response): Promise<any> => {
         const { page = 1, limit = 100 } = req.query;
         const [error, paginationDto] = PaginationDto.create(+page, +limit);
-        if (error) return res.status(400).json({ error });
+        if (error)
+            return res.status(400).json({
+                success: false,
+                message: error,
+                error: 'ValidationError',
+            });
         this.provinceService
             .getProvinces(paginationDto!)
-            .then((result) => res.status(200).json(result))
+            .then((result) =>
+                res.status(200).json({
+                    success: true,
+                    ...result,
+                })
+            )
             .catch((error) => handleError(error, res));
     };
 

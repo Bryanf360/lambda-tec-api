@@ -1,4 +1,5 @@
 export * from './auth.controller';
+export * from './city.controller';
 export * from './part-number.controller';
 export * from './product.controller';
 export * from './province.controller';

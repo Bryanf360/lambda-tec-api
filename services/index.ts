@@ -1,4 +1,5 @@
 export * from './auth.service';
+export * from './city.service';
 export * from './part-number.service';
 export * from './product.service';
 export * from './province.service';

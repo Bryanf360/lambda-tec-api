@@ -31,12 +31,14 @@ export class ProvinceService {
                 }),
             ]);
             return {
-                page,
-                limit,
-                total,
-                prev: page - 1 > 0 ? `/api/provinces?page=${page - 1}&limit=${limit}` : null,
-                next: `/api/provinces?page=${page + 1}&limit=${limit}`,
-                provinces,
+                meta: {
+                    page,
+                    limit,
+                    total,
+                    prev: page - 1 > 0 ? `/api/provinces?page=${page - 1}&limit=${limit}` : null,
+                    next: `/api/provinces?page=${page + 1}&limit=${limit}`,
+                },
+                data: provinces,
             };
         } catch (error) {
             throw CustomError.internalServer(`${error}`);
