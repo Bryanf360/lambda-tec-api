@@ -29,7 +29,7 @@ export class ReasonController {
     };
 
     public getReasonsByType = async (req: Request, res: Response): Promise<any> => {
-        const { page = 1, limit = 10 } = req.query;
+        const { page = 1, limit = 1000 } = req.query;
         const { type } = req.params;
         const [error, paginationDto] = PaginationDto.create(+page, +limit);
         if (error)

@@ -2,6 +2,7 @@ export * from './create-brand.dto';
 export * from './create-model.dto';
 export * from './create-part-number.dto';
 export * from './create-product.dto';
+export * from './create-province.dto';
 export * from './create-reason.dto';
 export * from './create-unit-type.dto';
 export * from './create-user.dto';
