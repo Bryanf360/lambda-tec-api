@@ -1,4 +1,4 @@
-import { products as Product } from '@prisma/client';
+import { Prisma, products as Product } from '@prisma/client';
 import { CreateProductDto, PaginationDto, UpdateProductDto } from '../dtos';
 import { prisma } from '../prisma/client';
 import { CustomError } from '../utils';
@@ -34,6 +34,7 @@ const selectedFields = {
             id: true,
             name: true,
             description: true,
+            simbol: true,
         },
     },
 };
@@ -108,17 +109,44 @@ export class ProductService {
         }
     }
 
-    public async getProducts(paginationDto: PaginationDto): Promise<any> {
+    public async getProducts(search: string, paginationDto: PaginationDto): Promise<any> {
         const { page, limit } = paginationDto;
+        const typeTranslations = {
+            equipo: 'equipment',
+            equip: 'equipment', // 👈 soporta búsqueda parcial
+            consumible: 'consumable',
+            consum: 'consumable', // 👈 soporta búsqueda parcial
+        };
+
+        const lowerSearch = search.toLowerCase();
+        const translatedType = Object.entries(typeTranslations).find(([key]) =>
+            lowerSearch.includes(key)
+        )?.[1];
+
+        const where = search
+            ? {
+                  OR: [
+                      ...(translatedType
+                          ? [{ type: { equals: translatedType } } as Prisma.productsWhereInput]
+                          : []),
+                      { name: { contains: search } },
+                      { description: { contains: search } },
+                      { unit_type: { is: { name: { contains: search } } } },
+                  ],
+              }
+            : {};
+
         try {
             const [total, products] = await Promise.all([
                 prisma.products.count({
                     where: {
+                        ...where,
                         is_deleted: false,
                     },
                 }),
                 prisma.products.findMany({
                     where: {
+                        ...where,
                         is_deleted: false,
                     },
                     skip: (page - 1) * limit,
@@ -137,6 +165,7 @@ export class ProductService {
                 data: products,
             };
         } catch (error) {
+            console.log('error: ', error);
             throw CustomError.internalServer('Internal server error');
         }
     }
