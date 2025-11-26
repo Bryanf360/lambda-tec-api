@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("MARIADB_URL")
+}
+
+model brands {
+  id          Int        @id @default(autoincrement()) @map("brand_id")
+  name        String     @unique(map: "name") @db.VarChar(45)
+  description String?    @db.Text
+  is_deleted  Boolean    @default(false)
+  models      models[]
+  products    products[]
+}
+
+model cities {
+  id             Int          @id @default(autoincrement()) @map("city_id")
+  fk_province_id Int
+  name           String       @db.VarChar(60)
+  description    String?      @db.Text
+  province       provinces    @relation(fields: [fk_province_id], references: [id], onUpdate: Restrict, map: "cities_ibfk_1")
+  companies      companies[]
+  warehouses     warehouses[]
+
+  @@unique([fk_province_id, name], map: "unique_city_per_province")
+}
+
+model companies {
+  id             Int            @id @default(autoincrement()) @map("company_id")
+  type           companies_type
+  names          String         @db.VarChar(60)
+  lastnames      String         @db.VarChar(60)
+  ruc            String         @unique(map: "unique_companies_ruc") @db.VarChar(13)
+  landline       String?        @db.VarChar(9)
+  mobile_phone   String?        @db.VarChar(10)
+  fk_province_id Int
+  fk_city_id     Int
+  address        String         @db.VarChar(80)
+  description    String?        @db.Text
+  is_deleted     Boolean        @default(false)
+  province       provinces      @relation(fields: [fk_province_id], references: [id], onUpdate: Restrict, map: "companies_ibfk_1")
+  city           cities         @relation(fields: [fk_city_id], references: [id], onUpdate: Restrict, map: "companies_ibfk_2")
+  movements      movements[]
+
+  @@index([fk_city_id], map: "fk_city_id")
+  @@index([fk_province_id], map: "fk_province_id")
+}
+
+model models {
+  id                  Int                   @id @default(autoincrement()) @map("model_id")
+  fk_brand_id         Int
+  name                String                @db.VarChar(45)
+  description         String?               @db.Text
+  is_deleted          Boolean               @default(false)
+  brand               brands                @relation(fields: [fk_brand_id], references: [id], onUpdate: Restrict, map: "models_ibfk_1")
+  models_part_numbers models_part_numbers[]
+  products            products[]
+
+  @@unique([fk_brand_id, name], map: "unique_model_per_brand")
+}
+
+model models_part_numbers {
+  fk_model_id       Int
+  fk_part_number_id Int
+  models            models       @relation(fields: [fk_model_id], references: [id], onUpdate: Restrict, map: "models_part_numbers_ibfk_1")
+  part_numbers      part_numbers @relation(fields: [fk_part_number_id], references: [id], onUpdate: Restrict, map: "models_part_numbers_ibfk_2")
+
+  @@id([fk_model_id, fk_part_number_id])
+  @@index([fk_part_number_id], map: "fk_part_number_id")
+}
+
+model movement_details {
+  movement_detail_id Int                 @id @default(autoincrement())
+  fk_movement_id     Int
+  fk_product_id      Int
+  quantity           Int
+  fk_warehouse_id    Int
+  created_at         DateTime            @default(now()) @db.Timestamp(0)
+  updated_at         DateTime            @default(now()) @db.Timestamp(0)
+  movements          movements           @relation(fields: [fk_movement_id], references: [movement_id], onUpdate: Restrict, map: "movement_details_ibfk_1")
+  products           products            @relation(fields: [fk_product_id], references: [id], onUpdate: Restrict, map: "movement_details_ibfk_2")
+  warehouses         warehouses          @relation(fields: [fk_warehouse_id], references: [warehouse_id], onUpdate: Restrict, map: "movement_details_ibfk_3")
+  product_instances  product_instances[]
+
+  @@unique([fk_movement_id, fk_product_id, fk_warehouse_id], map: "unique_movement_per_warehouse")
+  @@index([fk_product_id], map: "fk_product_id")
+  @@index([fk_warehouse_id], map: "fk_warehouse_id")
+}
+
+model movements {
+  movement_id      Int                @id @default(autoincrement())
+  type             movements_type
+  fk_provider_id   Int
+  date             DateTime           @db.DateTime(0)
+  code             String             @unique(map: "unique_movements_code") @db.VarChar(15)
+  fk_reason_id     Int
+  group_code       String             @db.VarChar(45)
+  created_at       DateTime           @default(now()) @db.Timestamp(0)
+  updated_at       DateTime           @default(now()) @db.Timestamp(0)
+  movement_details movement_details[]
+  companies        companies          @relation(fields: [fk_provider_id], references: [id], onUpdate: Restrict, map: "movements_ibfk_1")
+  reasons          reasons            @relation(fields: [fk_reason_id], references: [id], onUpdate: Restrict, map: "movements_ibfk_2")
+
+  @@index([fk_provider_id], map: "fk_provider_id")
+  @@index([fk_reason_id], map: "fk_reason_id")
+}
+
+model part_numbers {
+  id                  Int                   @id @default(autoincrement()) @map("part_number_id")
+  name                String                @unique(map: "unique_part_numbers_name") @db.VarChar(45)
+  description         String?               @db.Text
+  is_deleted          Boolean               @default(false)
+  models_part_numbers models_part_numbers[]
+  products            products[]
+}
+
+model product_instances {
+  product_instance_id   Int                      @id @default(autoincrement())
+  fk_movement_detail_id Int
+  fk_product_id         Int
+  fk_warehouse_id       Int
+  serial_number         String?                  @db.VarChar(25)
+  status                product_instances_status
+  asset_number          String?                  @db.VarChar(25)
+  created_at            DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                 @default(now()) @db.Timestamp(0)
+  movement_details      movement_details         @relation(fields: [fk_movement_detail_id], references: [movement_detail_id], onUpdate: Restrict, map: "product_instances_ibfk_1")
+  products              products                 @relation(fields: [fk_product_id], references: [id], onUpdate: Restrict, map: "product_instances_ibfk_2")
+  warehouses            warehouses               @relation(fields: [fk_warehouse_id], references: [warehouse_id], onUpdate: Restrict, map: "product_instances_ibfk_3")
+
+  @@index([fk_product_id], map: "fk_product_id")
+  @@index([fk_warehouse_id], map: "fk_warehouse_id")
+  @@index([fk_movement_detail_id], map: "product_instances_ibfk_1")
+}
+
+model products {
+  id                Int                 @id @default(autoincrement()) @map("product_id")
+  type              products_type
+  name              String              @unique(map: "unique_products_name") @db.VarChar(60)
+  description       String?             @db.Text
+  fk_brand_id       Int
+  fk_model_id       Int
+  fk_part_number_id Int
+  fk_unit_type      Int
+  status            products_status?    @default(active)
+  is_deleted        Boolean             @default(false)
+  movement_details  movement_details[]
+  product_instances product_instances[]
+  brand             brands              @relation(fields: [fk_brand_id], references: [id], onUpdate: Restrict, map: "products_ibfk_1")
+  model             models              @relation(fields: [fk_model_id], references: [id], onUpdate: Restrict, map: "products_ibfk_2")
+  part_number       part_numbers        @relation(fields: [fk_part_number_id], references: [id], onUpdate: Restrict, map: "products_ibfk_3")
+  unit_type         unit_types          @relation(fields: [fk_unit_type], references: [id], onUpdate: Restrict, map: "products_ibfk_4")
+
+  @@index([fk_brand_id], map: "fk_brand_id")
+  @@index([fk_model_id], map: "fk_model_id")
+  @@index([fk_part_number_id], map: "fk_part_number_id")
+  @@index([fk_unit_type], map: "fk_unit_type")
+}
+
+model provinces {
+  id          Int          @id @default(autoincrement()) @map("province_id")
+  name        String       @unique(map: "unique_provinces_name") @db.VarChar(60)
+  description String?      @db.Text
+  cities      cities[]
+  companies   companies[]
+  warehouses  warehouses[]
+}
+
+model reasons {
+  id          Int          @id @default(autoincrement()) @map("reason_id")
+  type        reasons_type
+  name        String       @db.VarChar(100)
+  description String?      @db.Text
+  is_deleted  Boolean      @default(false)
+  movements   movements[]
+
+  @@unique([type, name], map: "unique_name_per_type")
+}
+
+model unit_types {
+  id          Int        @id @default(autoincrement()) @map("unit_type_id")
+  name        String     @unique(map: "unique_unit_types_name") @db.VarChar(45)
+  simbol      String     @db.VarChar(5)
+  description String?    @db.Text
+  is_deleted  Boolean    @default(false)
+  products    products[]
+}
+
+model users {
+  user_id    Int          @id @default(autoincrement())
+  names      String       @db.VarChar(60)
+  lastnames  String       @db.VarChar(60)
+  email      String       @db.VarChar(60)
+  role       users_role
+  password   String       @db.VarChar(255)
+  status     users_status @default(active)
+  created_at DateTime     @default(now()) @db.Timestamp(0)
+}
+
+model warehouses {
+  warehouse_id      Int                 @id @default(autoincrement())
+  fk_province_id    Int
+  fk_city_id        Int
+  name              String              @db.VarChar(45)
+  description       String?             @db.Text
+  movement_details  movement_details[]
+  product_instances product_instances[]
+  provinces         provinces           @relation(fields: [fk_province_id], references: [id], onUpdate: Restrict, map: "warehouses_ibfk_1")
+  cities            cities              @relation(fields: [fk_city_id], references: [id], onUpdate: Restrict, map: "warehouses_ibfk_2")
+
+  @@index([fk_city_id], map: "fk_city_id")
+  @@index([fk_province_id], map: "fk_province_id")
+}
+
+enum reasons_type {
+  input
+  output
+}
+
+enum movements_type {
+  input
+  output
+}
+
+enum products_type {
+  consumable
+  equipment
+}
+
+enum companies_type {
+  client
+  supplier
+}
+
+enum users_role {
+  admin
+  technician
+}
+
+enum product_instances_status {
+  new
+  used
+}
+
+enum users_status {
+  active
+  inactive
+}
+
+enum products_status {
+  active
+  inactive
+}
