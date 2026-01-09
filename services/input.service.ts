@@ -1,25 +1,46 @@
-import { CreateBrandDto, PaginationDto, UpdateBrandDto } from '../dtos';
+import { CreateInputDto } from '../dtos/create-input.dto';
 import { prisma } from '../prisma/client';
 import { CustomError } from '../utils';
 
-export class BrandService {
-    async createBrand(createBrandDto: CreateBrandDto) {
+export class InputService {
+    async createInput(createInputDto: CreateInputDto) {
+        /*
         const brandExists = await prisma.brands.findFirst({
             where: {
                 name: createBrandDto.name,
             },
         });
         if (brandExists) throw CustomError.badRequest('Brand already exists');
+        */
         try {
-            const createdBrand = await prisma.brands.create({
-                data: createBrandDto,
+            const createdMovement = await prisma.movements.create({
+                data: {
+                    type: createInputDto.type,
+                    fk_provider_id: createInputDto.providerId,
+                    date: createInputDto.date,
+                    code: createInputDto.code,
+                    fk_reason_id: createInputDto.reasonId,
+                    group_code: createInputDto.groupCode,
+                },
             });
-            return createdBrand;
+
+            for (const detail of createInputDto.details) {
+                await prisma.movement_details.create({
+                    data: {
+                        fk_movement_id: createdMovement.movement_id,
+                        fk_product_id: detail.productId,
+                        fk_warehouse_id: detail.warehouseId,
+                        quantity: detail.quantity,
+                    },
+                });
+            }
+            return createdMovement;
         } catch (error) {
             throw CustomError.internalServer(`${error}`);
         }
     }
 
+    /*
     async getBrands(paginationDto: PaginationDto) {
         const { page, limit } = paginationDto;
         try {
@@ -132,4 +153,5 @@ export class BrandService {
             throw CustomError.internalServer(` ${error} `);
         }
     }
+        */
 }
