@@ -4,19 +4,11 @@ import { CustomError } from '../utils';
 
 export class InputService {
     async createInput(createInputDto: CreateInputDto) {
-        /*
-        const brandExists = await prisma.brands.findFirst({
-            where: {
-                name: createBrandDto.name,
-            },
-        });
-        if (brandExists) throw CustomError.badRequest('Brand already exists');
-        */
-        try {
-            const createdMovement = await prisma.movements.create({
+        return prisma.$transaction(async (tx) => {
+            const movement = await tx.movements.create({
                 data: {
                     type: createInputDto.type,
-                    fk_provider_id: createInputDto.providerId,
+                    fk_provider_id: createInputDto.providerId ?? null,
                     date: createInputDto.date,
                     code: createInputDto.code,
                     fk_reason_id: createInputDto.reasonId,
@@ -24,20 +16,68 @@ export class InputService {
                 },
             });
 
+            // 2️⃣ Procesar detalles
             for (const detail of createInputDto.details) {
-                await prisma.movement_details.create({
+                // Normalizar instances (evita null/undefined)
+                const instances = detail.instances ?? [];
+
+                // 2.1️⃣ Obtener tipo de producto (fuente de verdad)
+                const product = await tx.products.findUnique({
+                    where: { id: detail.productId },
+                    select: { type: true },
+                });
+
+                if (!product) {
+                    throw CustomError.badRequest(`El producto ${detail.productId} no existe`);
+                }
+
+                const isEquipment = product.type === 'equipment';
+
+                // 2.2️⃣ Reglas por tipo
+                if (isEquipment) {
+                    if (instances.length === 0) {
+                        throw CustomError.badRequest(
+                            'Los productos tipo equipo requieren instancias'
+                        );
+                    }
+                    if (detail.quantity !== instances.length) {
+                        throw CustomError.badRequest('La cantidad no coincide con las instancias');
+                    }
+                } else {
+                    // Consumible
+                    if (instances.length > 0) {
+                        throw CustomError.badRequest(
+                            'Los productos consumibles no manejan instancias'
+                        );
+                    }
+                }
+
+                // 2.3️⃣ Crear movement_detail
+                const movementDetail = await tx.movement_details.create({
                     data: {
-                        fk_movement_id: createdMovement.movement_id,
+                        fk_movement_id: movement.movement_id,
                         fk_product_id: detail.productId,
                         fk_warehouse_id: detail.warehouseId,
                         quantity: detail.quantity,
                     },
                 });
+
+                // 2.4️⃣ Crear instancias SOLO si es equipo
+                if (isEquipment) {
+                    await tx.product_instances.createMany({
+                        data: instances.map((productInstance) => ({
+                            fk_movement_detail_id: movementDetail.movement_detail_id,
+                            fk_product_id: detail.productId,
+                            fk_warehouse_id: detail.warehouseId,
+                            serial_number: productInstance.serialNumber,
+                            asset_number: productInstance.assetNumber,
+                            status: productInstance.status,
+                        })),
+                    });
+                }
             }
-            return createdMovement;
-        } catch (error) {
-            throw CustomError.internalServer(`${error}`);
-        }
+            return { movementId: movement.movement_id };
+        });
     }
 
     /*

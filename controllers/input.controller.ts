@@ -24,12 +24,12 @@ export class InputController {
 
     public createInput = async (req: Request, res: Response): Promise<any> => {
         const [error, createInputDto] = CreateInputDto.create(req.body);
-        // if (error)
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: error,
-        //         error: 'ValidationError',
-        //     });
+        if (error)
+            return res.status(400).json({
+                success: false,
+                message: error,
+                error: 'ValidationError',
+            });
         this.inputService
             .createInput(createInputDto!)
             .then((input) =>
