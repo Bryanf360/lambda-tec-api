@@ -3,19 +3,19 @@ export class CreateInputDto {
         public readonly type: 'input' | 'output',
         public readonly providerId: number,
         public readonly date: Date,
-        public readonly code: string,
         public readonly reasonId: number,
-        public readonly groupCode: string,
         public readonly details: {
             productId: number;
             quantity: number;
             warehouseId: number;
             instances?: { serialNumber?: string; assetNumber?: string; status: 'new' | 'used' }[];
-        }[]
+        }[],
+        public readonly code?: string,
+        public readonly groupCode?: string
     ) {}
 
     static create(object: { [key: string]: any }): [string?, CreateInputDto?] {
-        let { type, providerId, date, code, reasonId, groupCode, details } = object;
+        let { type, providerId, date, reasonId, code, groupCode, details } = object;
         if (!type) return ['Missing type'];
         if (!providerId) return ['Missing provider id'];
         if (isNaN(providerId)) return ['Provider id is not valid'];
@@ -31,7 +31,7 @@ export class CreateInputDto {
         }
         if (!reasonId) return ['Missing reason id'];
         if (isNaN(reasonId)) return ['Reason id is not valid'];
-        if (!groupCode) return ['Missing group code'];
+        // if (!groupCode) return ['Missing group code'];
         if (!details) return ['Missing details'];
         if (!Array.isArray(details)) return ['Field details is not valid'];
         if (details.length === 0) return ['Movement must have at least a one detail'];
@@ -53,7 +53,7 @@ export class CreateInputDto {
         }
         return [
             undefined,
-            new CreateInputDto(type, providerId, date, code, reasonId, groupCode, details),
+            new CreateInputDto(type, providerId, date, reasonId, details, code, groupCode),
         ];
     }
 }
