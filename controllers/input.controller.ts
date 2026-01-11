@@ -35,7 +35,7 @@ export class InputController {
             .then((input) =>
                 res.status(200).json({
                     success: true,
-                    message: 'Input created successfully',
+                    message: 'Movimiento creado exitosamente',
                     data: input,
                 })
             )
