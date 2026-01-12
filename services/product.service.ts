@@ -170,19 +170,47 @@ export class ProductService {
         }
     }
 
-    public async getProductStocks(paginationDto: PaginationDto): Promise<any> {
+    public async getProductStocks(search: string, paginationDto: PaginationDto): Promise<any> {
         const { page, limit } = paginationDto;
+        const typeTranslations = {
+            equipo: 'equipment',
+            equip: 'equipment', // 👈 soporta búsqueda parcial
+            consumible: 'consumable',
+            consum: 'consumable', // 👈 soporta búsqueda parcial
+        };
 
+        const lowerSearch = search.toLowerCase();
+        const translatedType = Object.entries(typeTranslations).find(([key]) =>
+            lowerSearch.includes(key)
+        )?.[1];
+
+        const where = search
+            ? {
+                  OR: [
+                      ...(translatedType
+                          ? [{ type: { equals: translatedType } } as Prisma.productsWhereInput]
+                          : []),
+                      { name: { contains: search } },
+                      { description: { contains: search } },
+                      { brand: { is: { name: { contains: search } } } },
+                      { model: { is: { name: { contains: search } } } },
+                      { part_number: { is: { name: { contains: search } } } },
+                      { unit_type: { is: { name: { contains: search } } } },
+                  ],
+              }
+            : {};
         try {
             const [total, products] = await Promise.all([
                 prisma.products.count({
                     where: {
+                        ...where,
                         // TODO: validate the meaning of the status field and is_deleted field
                         is_deleted: false,
                     },
                 }),
                 prisma.products.findMany({
                     where: {
+                        ...where,
                         is_deleted: false,
                     },
                     skip: (page - 1) * limit,

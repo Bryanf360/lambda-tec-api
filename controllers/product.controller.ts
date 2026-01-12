@@ -57,8 +57,9 @@ export class ProductController {
                 message: error,
                 error: 'ValidationError',
             });
+        const normalizedSearch: string = normalizeSearch(search);
         this.productService
-            .getProductStocks(paginationDto!)
+            .getProductStocks(normalizedSearch, paginationDto!)
             .then((result) =>
                 res.status(200).json({
                     success: true,
