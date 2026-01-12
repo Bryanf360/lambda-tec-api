@@ -213,6 +213,9 @@ export class ProductService {
                         ...where,
                         is_deleted: false,
                     },
+                    orderBy: {
+                        created_at: 'desc', // 🔥 clave
+                    },
                     skip: (page - 1) * limit,
                     take: limit,
                     select: { ...selectedFields, status: true },
@@ -370,6 +373,7 @@ export class ProductService {
             });
             return deletedProduct;
         } catch (error) {
+            console.log('error: ', error);
             if (error instanceof CustomError) throw error;
             throw CustomError.internalServer('Internal server error');
         }

@@ -147,6 +147,7 @@ model products {
   fk_unit_type      Int
   status            products_status?    @default(active)
   is_deleted        Boolean             @default(false)
+  created_at        DateTime            @default(now()) @db.DateTime(0)
   movement_details  movement_details[]
   product_instances product_instances[]
   brand             brands              @relation(fields: [fk_brand_id], references: [id], onUpdate: Restrict, map: "products_ibfk_1")
