@@ -170,6 +170,47 @@ export class ProductService {
         }
     }
 
+    public async getProductStocks(): Promise<any> {
+        try {
+            const products = await prisma.products.findMany({
+                select: selectedFields,
+            });
+
+            const movementDetails = await prisma.movement_details.findMany({
+                select: {
+                    fk_product_id: true,
+                    quantity: true,
+                    movements: {
+                        select: { type: true },
+                    },
+                },
+            });
+
+            const stockMap = new Map<number, number>();
+
+            for (const movementDetail of movementDetails) {
+                const sign = movementDetail.movements.type === 'input' ? 1 : -1;
+                stockMap.set(
+                    movementDetail.fk_product_id,
+                    (stockMap.get(movementDetail.fk_product_id) ?? 0) +
+                        sign * movementDetail.quantity
+                );
+            }
+
+            const productsWithStock = products.map((product) => ({
+                ...product,
+                stock: stockMap.get(product.id) ?? 0,
+            }));
+            return {
+                meta: {},
+                data: productsWithStock,
+            };
+        } catch (error) {
+            console.log('error: ', error);
+            throw CustomError.internalServer('Internal server error');
+        }
+    }
+
     public async updateProductById(id: number, updateProductDto: UpdateProductDto): Promise<any> {
         let productNameExists = undefined;
         try {

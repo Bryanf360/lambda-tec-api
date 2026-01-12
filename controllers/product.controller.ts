@@ -48,6 +48,17 @@ export class ProductController {
             .catch((error) => handleError(error, res));
     };
 
+    public getProductStocks = async (req: Request, res: Response): Promise<any> => {
+        this.productService
+            .getProductStocks()
+            .then((result) =>
+                res.status(200).json({
+                    success: true,
+                    ...result,
+                })
+            )
+            .catch((error) => handleError(error, res));
+    };
     public updateProduct = async (req: Request, res: Response): Promise<any> => {
         const { id } = req.params;
         const [error, updateProductDto] = UpdateProductDto.create(req.body);

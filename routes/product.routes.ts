@@ -10,6 +10,7 @@ export class ProductRoutes {
         const productController = new ProductController(productService);
         router.post('/', AuthMiddlware.validateJWT, productController.createProduct);
         router.get('/', AuthMiddlware.validateJWT, productController.getProducts);
+        router.get('/stocks', AuthMiddlware.validateJWT, productController.getProductStocks);
         router.put(
             '/:id',
             [AuthMiddlware.validateJWT, ValidateIdMiddlware.validateId],
