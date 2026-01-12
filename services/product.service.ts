@@ -353,6 +353,14 @@ export class ProductService {
                 },
             });
             if (!productExists) throw CustomError.notFound('Product not found');
+
+            const stock = await this.getStockByProductId(productExists.id);
+            if (stock > 0) {
+                throw CustomError.badRequest(
+                    'No se puede eliminar un producto con stock disponible'
+                );
+            }
+
             const deletedProduct = await prisma.products.update({
                 where: {
                     id: id,
@@ -365,5 +373,33 @@ export class ProductService {
             if (error instanceof CustomError) throw error;
             throw CustomError.internalServer('Internal server error');
         }
+    }
+
+    private async getStockByProductId(productId: number): Promise<number> {
+        const movementDetails = await prisma.movement_details.findMany({
+            where: {
+                fk_product_id: productId,
+            },
+            select: {
+                quantity: true,
+                movements: {
+                    select: {
+                        type: true, // 'ENTRY' | 'EXIT'
+                    },
+                },
+            },
+        });
+
+        let stock = 0;
+
+        for (const movementDetail of movementDetails) {
+            if (movementDetail.movements.type === 'input') {
+                stock += movementDetail.quantity;
+            } else if (movementDetail.movements.type === 'output') {
+                stock -= movementDetail.quantity;
+            }
+        }
+
+        return stock;
     }
 }
