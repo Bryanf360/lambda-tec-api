@@ -170,11 +170,26 @@ export class ProductService {
         }
     }
 
-    public async getProductStocks(): Promise<any> {
+    public async getProductStocks(paginationDto: PaginationDto): Promise<any> {
+        const { page, limit } = paginationDto;
+
         try {
-            const products = await prisma.products.findMany({
-                select: selectedFields,
-            });
+            const [total, products] = await Promise.all([
+                prisma.products.count({
+                    where: {
+                        // TODO: validate the meaning of the status field and is_deleted field
+                        is_deleted: false,
+                    },
+                }),
+                prisma.products.findMany({
+                    where: {
+                        is_deleted: false,
+                    },
+                    skip: (page - 1) * limit,
+                    take: limit,
+                    select: { ...selectedFields, status: true },
+                }),
+            ]);
 
             const movementDetails = await prisma.movement_details.findMany({
                 select: {
@@ -202,7 +217,16 @@ export class ProductService {
                 stock: stockMap.get(product.id) ?? 0,
             }));
             return {
-                meta: {},
+                meta: {
+                    page: page,
+                    limit: limit,
+                    total: total,
+                    prev:
+                        page - 1 > 0
+                            ? `/api/products/stocks?page=${page - 1}&limit=${limit}`
+                            : null,
+                    next: `/api/products/stocks?page=${page + 1}&limit=${limit}`,
+                },
                 data: productsWithStock,
             };
         } catch (error) {
