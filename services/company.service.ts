@@ -75,13 +75,17 @@ export class CompanyService {
         }
     }
 
-    public async getCompanies(paginationDto: PaginationDto): Promise<any> {
+    public async getCompaniesByType(
+        type: 'client' | 'supplier',
+        paginationDto: PaginationDto
+    ): Promise<any> {
         const { page, limit } = paginationDto;
         try {
             const [companies, total] = await Promise.all([
                 prisma.companies.findMany({
                     where: {
                         is_deleted: false,
+                        type,
                     },
                     skip: (page - 1) * limit,
                     take: limit,
@@ -90,6 +94,7 @@ export class CompanyService {
                 prisma.companies.count({
                     where: {
                         is_deleted: false,
+                        type,
                     },
                 }),
             ]);

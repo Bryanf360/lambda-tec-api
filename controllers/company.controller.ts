@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { CompanyService } from '../services';
 import { CreateCompanyDto, PaginationDto, UpdateCompanyDto } from '../dtos';
 import { handleError } from '../utils';
+import { companies_type } from '@prisma/client';
 
 export class CompanyController {
     constructor(private readonly companyService: CompanyService) {}
@@ -29,6 +30,8 @@ export class CompanyController {
 
     public getCompanies = async (req: Request, res: Response): Promise<any> => {
         const { page = 1, limit = 5 } = req.query;
+        // TODO: validate type is supplier or client
+        const { type } = req.params as { type: companies_type };
         const [error, paginationDto] = PaginationDto.create(+page, +limit);
         if (error)
             return res.status(400).json({
@@ -37,7 +40,7 @@ export class CompanyController {
                 error: 'ValidationError',
             });
         this.companyService
-            .getCompanies(paginationDto!)
+            .getCompaniesByType(type, paginationDto!)
             .then((result) =>
                 res.status(200).json({
                     success: true,

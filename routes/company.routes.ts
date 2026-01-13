@@ -10,7 +10,7 @@ export class CompanyRoutes {
         const companyService = new CompanyService();
         const companyController = new CompanyController(companyService);
         router.post('/', AuthMiddlware.validateJWT, companyController.createCompany);
-        router.get('/', AuthMiddlware.validateJWT, companyController.getCompanies);
+        router.get('/:type', AuthMiddlware.validateJWT, companyController.getCompanies);
         router.put(
             '/:id',
             [AuthMiddlware.validateJWT, ValidateIdMiddlware.validateId],
