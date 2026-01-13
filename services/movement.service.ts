@@ -2,8 +2,8 @@ import { CreateInputDto } from '../dtos/create-input.dto';
 import { prisma } from '../prisma/client';
 import { CustomError } from '../utils';
 
-export class InputService {
-    async createInput(createInputDto: CreateInputDto) {
+export class MovementService {
+    async createMovement(createInputDto: CreateInputDto) {
         return prisma.$transaction(async (tx) => {
             const movement = await tx.movements.create({
                 data: {

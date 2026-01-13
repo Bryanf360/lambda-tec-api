@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 
 import { CustomError } from '../utils';
-import { InputService } from '../services/input.service';
 import { CreateInputDto } from '../dtos/create-input.dto';
+import { MovementService } from '../services';
 
-export class InputController {
-    constructor(private readonly inputService: InputService) {}
+export class MovementController {
+    constructor(private readonly movementService: MovementService) {}
 
     private handleError = (error: unknown, res: Response) => {
         if (error instanceof CustomError) {
@@ -30,8 +30,28 @@ export class InputController {
                 message: error,
                 error: 'ValidationError',
             });
-        this.inputService
-            .createInput(createInputDto!)
+        this.movementService
+            .createMovement(createInputDto!)
+            .then((input) =>
+                res.status(200).json({
+                    success: true,
+                    message: 'Movimiento creado exitosamente',
+                    data: input,
+                })
+            )
+            .catch((error) => this.handleError(error, res));
+    };
+
+    public createOutput = async (req: Request, res: Response): Promise<any> => {
+        const [error, createInputDto] = CreateInputDto.create(req.body);
+        if (error)
+            return res.status(400).json({
+                success: false,
+                message: error,
+                error: 'ValidationError',
+            });
+        this.movementService
+            .createMovement(createInputDto!)
             .then((input) =>
                 res.status(200).json({
                     success: true,

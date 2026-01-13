@@ -11,7 +11,7 @@ import { ReasonRoutes } from './reason.routes';
 import { ProvinceRoutes } from './province.routes';
 import { CityRoutes } from './city.routes';
 import { CompanyRoutes } from './company.routes';
-import { InputRoutes } from './input.routes';
+import { MovementRoutes } from './movement.routes';
 
 // import { AuthRoutes } from "./auth/routes";
 // import { BrandRoutes } from "./brands/routes";
@@ -41,7 +41,7 @@ export class AppRoutes {
         router.use('/api/provinces', ProvinceRoutes.routes);
         router.use('/api/cities', CityRoutes.routes);
         router.use('/api/companies', CompanyRoutes.routes);
-        router.use('/api/inputs', InputRoutes.routes);
+        router.use('/api/movements', MovementRoutes.routes);
         // router.use('/api/warehouses', WarehouseRoutes.routes);
         return router;
     }
