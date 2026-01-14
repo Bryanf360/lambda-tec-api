@@ -2,6 +2,7 @@ export * from './create-brand.dto';
 export * from './create-city.dto';
 export * from './create-company.dto';
 export * from './create-model.dto';
+export * from './create-movement.dto';
 export * from './create-part-number.dto';
 export * from './create-product.dto';
 export * from './create-province.dto';

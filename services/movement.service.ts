@@ -1,23 +1,24 @@
-import { CreateInputDto } from '../dtos/create-input.dto';
+import { movement_details } from './../node_modules/.prisma/client/index.d';
+import { CreateMovementDto } from '../dtos/create-movement.dto';
 import { prisma } from '../prisma/client';
 import { CustomError } from '../utils';
 
 export class MovementService {
-    async createMovement(createInputDto: CreateInputDto) {
+    async createMovement(createMovementDto: CreateMovementDto) {
         return prisma.$transaction(async (tx) => {
             const movement = await tx.movements.create({
                 data: {
-                    type: createInputDto.type,
-                    fk_provider_id: createInputDto.providerId ?? null,
-                    date: createInputDto.date,
-                    code: createInputDto.code,
-                    fk_reason_id: createInputDto.reasonId,
-                    group_code: createInputDto.groupCode,
+                    type: 'input',
+                    fk_company_id: createMovementDto.companyId ?? null,
+                    date: createMovementDto.date,
+                    code: createMovementDto.code,
+                    fk_reason_id: createMovementDto.reasonId,
+                    group_code: createMovementDto.groupCode,
                 },
             });
 
             // 2️⃣ Procesar detalles
-            for (const detail of createInputDto.details) {
+            for (const detail of createMovementDto.details) {
                 // Normalizar instances (evita null/undefined)
                 const instances = detail.instances ?? [];
 
@@ -80,118 +81,115 @@ export class MovementService {
         });
     }
 
-    /*
-    async getBrands(paginationDto: PaginationDto) {
-        const { page, limit } = paginationDto;
-        try {
-            const [total, brands] = await Promise.all([
-                prisma.brands.count({
-                    where: {
-                        is_deleted: false,
-                    },
+    async createOutput(createMovementDto: CreateMovementDto) {
+        return prisma.$transaction(async (tx) => {
+            const [company, reason] = await Promise.all([
+                tx.companies.findUnique({
+                    where: { id: createMovementDto.companyId },
                 }),
-                prisma.brands.findMany({
-                    where: {
-                        is_deleted: false,
-                    },
-                    skip: (page - 1) * limit,
-                    take: limit,
-                    select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                    },
+                tx.reasons.findUnique({
+                    where: { id: createMovementDto.reasonId },
                 }),
             ]);
-            return {
-                meta: {
-                    page: page,
-                    limit: limit,
-                    total: total,
-                    prev: page != 1 ? `/api/brands?page=${page - 1}&limit=${limit}` : null,
-                    next: `/api/brands?page=${page + 1}&limit=${limit}`,
+
+            if (!company) {
+                throw CustomError.badRequest(
+                    `El cliente con id ${createMovementDto.companyId} no existe`
+                );
+            }
+
+            if (company.is_deleted) {
+                throw CustomError.badRequest(
+                    `El cliente con id ${createMovementDto.companyId} actualmente esta deshabilitado`
+                );
+            }
+
+            if (!company.is_client) {
+                throw CustomError.badRequest(
+                    `El usuario con id ${createMovementDto.companyId} no es cliente`
+                );
+            }
+
+            if (!reason) {
+                throw CustomError.badRequest(
+                    `El motivo con id ${createMovementDto.reasonId} no existe`
+                );
+            }
+
+            if (reason.is_deleted) {
+                throw CustomError.badRequest(
+                    `El motivo con id ${createMovementDto.reasonId} actualmente esta deshabilitado`
+                );
+            }
+
+            if (reason.type !== 'output') {
+                throw CustomError.badRequest(
+                    `El motivo con id ${createMovementDto.reasonId} no es de salida`
+                );
+            }
+
+            const movement = await tx.movements.create({
+                data: {
+                    type: 'output',
+                    fk_company_id: createMovementDto.companyId,
+                    date: createMovementDto.date,
+                    fk_reason_id: createMovementDto.reasonId,
                 },
-                data: brands,
-            };
-        } catch (error) {
-            throw CustomError.internalServer('Internal server error');
-        }
+            });
+            for (const movementDetail of createMovementDto.details) {
+                const stock = await this.getStockByProductId(movementDetail.productId, tx);
+
+                if (movementDetail.quantity > stock) {
+                    throw CustomError.badRequest(
+                        `Stock insuficiente para el producto con id ${movementDetail.productId}`
+                    );
+                }
+                await tx.movement_details.create({
+                    data: {
+                        fk_movement_id: movement.movement_id,
+                        fk_product_id: movementDetail.productId,
+                        fk_warehouse_id: movementDetail.warehouseId,
+                        quantity: movementDetail.quantity,
+                    },
+                });
+                if (movementDetail.instanceIds?.length) {
+                    for (const instanceId of movementDetail.instanceIds) {
+                        const instance = await tx.product_instances.findUnique({
+                            where: { product_instance_id: instanceId },
+                        });
+                        if (!instance)
+                            throw CustomError.badRequest(
+                                `Instancia de producto con id ${movementDetail.productId} no existe`
+                            );
+                    }
+                    await tx.product_instances.updateMany({
+                        where: {
+                            product_instance_id: { in: movementDetail.instanceIds },
+                        },
+                        data: {
+                            operational_status: 'out',
+                            fk_warehouse_id: null,
+                        },
+                    });
+                }
+            }
+            return { movementId: movement.movement_id };
+        });
     }
 
-    async getBrandById(id: number) {
-        const brandExists = await prisma.brands.findFirst({
-            where: {
-                id: id,
-                is_deleted: false,
-            },
+    async getStockByProductId(productId: number, tx: any) {
+        const details = await tx.movement_details.findMany({
+            where: { fk_product_id: productId },
             select: {
-                id: true,
-                name: true,
-                description: true,
+                quantity: true,
+                movements: { select: { type: true } },
             },
         });
-        if (!brandExists) throw CustomError.notFound(`Brand with id ${id} not found`);
-        return brandExists;
-    }
 
-    async updateBrandById(id: number, updateBrandDto: UpdateBrandDto) {
-        const brandExists = await prisma.brands.findFirst({
-            where: {
-                id: id,
-                is_deleted: false,
-            },
-        });
-        if (!brandExists) throw CustomError.notFound(`Brand with id ${id} not found`);
-        const brandNameExists = await prisma.brands.findFirst({
-            where: {
-                name: updateBrandDto.name,
-                is_deleted: false,
-            },
-        });
-        if (brandNameExists && id != brandNameExists.id)
-            throw CustomError.badRequest('Brand already exists');
-        try {
-            const updatedBrand = await prisma.brands.update({
-                where: {
-                    id: id,
-                },
-                select: {
-                    id: true,
-                    name: true,
-                    description: true,
-                },
-                data: updateBrandDto.values,
-            });
-            return updatedBrand;
-        } catch (error) {
-            throw CustomError.internalServer(`${error}`);
-        }
+        return details.reduce(
+            (acc: number, d: any) =>
+                acc + (d.movements.type === 'input' ? d.quantity : -d.quantity),
+            0
+        );
     }
-
-    async deleteBrandById(id: number) {
-        const brandExists = await prisma.brands.findFirst({
-            where: {
-                id: id,
-                is_deleted: false,
-            },
-        });
-        if (!brandExists) throw CustomError.notFound(`Brand with id ${id} not found`);
-        try {
-            const deletedBrand = await prisma.brands.update({
-                where: {
-                    id: id,
-                },
-                select: {
-                    id: true,
-                    name: true,
-                    description: true,
-                },
-                data: { is_deleted: true },
-            });
-            return deletedBrand;
-        } catch (error) {
-            throw CustomError.internalServer(` ${error} `);
-        }
-    }
-        */
 }

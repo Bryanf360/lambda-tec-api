@@ -40,6 +40,8 @@ model companies {
   fk_city_id     Int
   address        String         @db.VarChar(80)
   description    String?        @db.Text
+  is_supplier    Boolean?
+  is_client      Boolean?
   is_deleted     Boolean        @default(false)
   province       provinces      @relation(fields: [fk_province_id], references: [id], onUpdate: Restrict, map: "companies_ibfk_1")
   city           cities         @relation(fields: [fk_city_id], references: [id], onUpdate: Restrict, map: "companies_ibfk_2")
@@ -93,7 +95,7 @@ model movement_details {
 model movements {
   movement_id      Int                @id @default(autoincrement())
   type             movements_type
-  fk_provider_id   Int
+  fk_company_id    Int
   date             DateTime           @db.DateTime(0)
   code             String?            @unique(map: "unique_movements_code") @db.VarChar(15)
   fk_reason_id     Int
@@ -101,10 +103,10 @@ model movements {
   created_at       DateTime           @default(now()) @db.Timestamp(0)
   updated_at       DateTime           @default(now()) @db.Timestamp(0)
   movement_details movement_details[]
-  companies        companies          @relation(fields: [fk_provider_id], references: [id], onUpdate: Restrict, map: "movements_ibfk_1")
+  companies        companies          @relation(fields: [fk_company_id], references: [id], onUpdate: Restrict, map: "movements_ibfk_1")
   reasons          reasons            @relation(fields: [fk_reason_id], references: [id], onUpdate: Restrict, map: "movements_ibfk_2")
 
-  @@index([fk_provider_id], map: "fk_provider_id")
+  @@index([fk_company_id], map: "fk_provider_id")
   @@index([fk_reason_id], map: "fk_reason_id")
 }
 
@@ -118,18 +120,19 @@ model part_numbers {
 }
 
 model product_instances {
-  product_instance_id   Int                      @id @default(autoincrement())
+  product_instance_id   Int                                   @id @default(autoincrement())
   fk_movement_detail_id Int
   fk_product_id         Int
-  fk_warehouse_id       Int
-  serial_number         String?                  @db.VarChar(25)
+  fk_warehouse_id       Int?
+  serial_number         String?                               @db.VarChar(25)
   status                product_instances_status
-  asset_number          String?                  @db.VarChar(25)
-  created_at            DateTime                 @default(now()) @db.Timestamp(0)
-  updated_at            DateTime                 @default(now()) @db.Timestamp(0)
-  movement_details      movement_details         @relation(fields: [fk_movement_detail_id], references: [movement_detail_id], onUpdate: Restrict, map: "product_instances_ibfk_1")
-  products              products                 @relation(fields: [fk_product_id], references: [id], onUpdate: Restrict, map: "product_instances_ibfk_2")
-  warehouses            warehouses               @relation(fields: [fk_warehouse_id], references: [warehouse_id], onUpdate: Restrict, map: "product_instances_ibfk_3")
+  operational_status    product_instances_operational_status? @default(available)
+  asset_number          String?                               @db.VarChar(25)
+  created_at            DateTime                              @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                              @default(now()) @db.Timestamp(0)
+  movement_details      movement_details                      @relation(fields: [fk_movement_detail_id], references: [movement_detail_id], onUpdate: Restrict, map: "product_instances_ibfk_1")
+  products              products                              @relation(fields: [fk_product_id], references: [id], onUpdate: Restrict, map: "product_instances_ibfk_2")
+  warehouses            warehouses?                           @relation(fields: [fk_warehouse_id], references: [warehouse_id], onDelete: Restrict, onUpdate: Restrict, map: "product_instances_ibfk_3")
 
   @@index([fk_product_id], map: "fk_product_id")
   @@index([fk_warehouse_id], map: "fk_warehouse_id")
@@ -254,4 +257,9 @@ enum users_status {
 enum products_status {
   active
   inactive
+}
+
+enum product_instances_operational_status {
+  available
+  out
 }

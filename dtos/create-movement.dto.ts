@@ -1,7 +1,6 @@
-export class CreateInputDto {
+export class CreateMovementDto {
     private constructor(
-        public readonly type: 'input' | 'output',
-        public readonly providerId: number,
+        public readonly companyId: number,
         public readonly date: Date,
         public readonly reasonId: number,
         public readonly details: {
@@ -9,16 +8,16 @@ export class CreateInputDto {
             quantity: number;
             warehouseId: number;
             instances?: { serialNumber?: string; assetNumber?: string; status: 'new' | 'used' }[];
+            instanceIds?: number[];
         }[],
         public readonly code?: string,
         public readonly groupCode?: string
     ) {}
 
-    static create(object: { [key: string]: any }): [string?, CreateInputDto?] {
-        let { type, providerId, date, reasonId, code, groupCode, details } = object;
-        if (!type) return ['Missing type'];
-        if (!providerId) return ['Missing provider id'];
-        if (isNaN(providerId)) return ['Provider id is not valid'];
+    static create(object: { [key: string]: any }): [string?, CreateMovementDto?] {
+        let { companyId, date, reasonId, code, groupCode, details } = object;
+        if (!companyId) return ['Proveedor/Cliente es requerido'];
+        if (isNaN(companyId)) return ['Provider id is not valid'];
         if (!date) return ['Missing date'];
         const num = Number(date);
         if (Number.isFinite(num)) return ['Date must not a number'];
@@ -29,7 +28,7 @@ export class CreateInputDto {
         if (createdDate > new Date()) {
             return ['Future date is not valid'];
         }
-        if (!reasonId) return ['Missing reason id'];
+        if (!reasonId) return ['El motivo es requerido'];
         if (isNaN(reasonId)) return ['Reason id is not valid'];
         // if (!groupCode) return ['Missing group code'];
         if (!details) return ['Missing details'];
@@ -51,9 +50,11 @@ export class CreateInputDto {
                 }
             }
         }
+        // TODO: validate instancesIds,
+
         return [
             undefined,
-            new CreateInputDto(type, providerId, date, reasonId, details, code, groupCode),
+            new CreateMovementDto(companyId, date, reasonId, details, code, groupCode),
         ];
     }
 }

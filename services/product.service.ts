@@ -218,13 +218,25 @@ export class ProductService {
                     },
                     skip: (page - 1) * limit,
                     take: limit,
-                    select: { ...selectedFields, status: true },
+                    select: {
+                        ...selectedFields,
+                        status: true,
+                        product_instances: {
+                            select: {
+                                product_instance_id: true,
+                                fk_product_id: true,
+                                serial_number: true,
+                                asset_number: true,
+                            },
+                        },
+                    },
                 }),
             ]);
 
             const movementDetails = await prisma.movement_details.findMany({
                 select: {
                     fk_product_id: true,
+                    fk_warehouse_id: true,
                     quantity: true,
                     movements: {
                         select: { type: true },
@@ -232,20 +244,23 @@ export class ProductService {
                 },
             });
 
-            const stockMap = new Map<number, number>();
+            const stockMap = new Map<number, { stock: number; warehouseId: number }>();
 
             for (const movementDetail of movementDetails) {
                 const sign = movementDetail.movements.type === 'input' ? 1 : -1;
-                stockMap.set(
-                    movementDetail.fk_product_id,
-                    (stockMap.get(movementDetail.fk_product_id) ?? 0) +
-                        sign * movementDetail.quantity
-                );
+                stockMap.set(movementDetail.fk_product_id, {
+                    stock:
+                        (stockMap.get(movementDetail.fk_product_id)?.stock ?? 0) +
+                        sign * movementDetail.quantity,
+                    warehouseId: movementDetail.fk_warehouse_id,
+                });
             }
 
             const productsWithStock = products.map((product) => ({
                 ...product,
-                stock: stockMap.get(product.id) ?? 0,
+                stock: stockMap.get(product.id)?.stock ?? 0,
+                warehouseId:
+                    product.type === 'consumable' ? stockMap.get(product.id)?.warehouseId : null,
             }));
             return {
                 meta: {

@@ -3,6 +3,7 @@ export * from './city.service';
 export * from './company.service';
 export * from './movement.service';
 export * from './part-number.service';
+export * from './product-instance.service';
 export * from './product.service';
 export * from './province.service';
 export * from './reason.service';

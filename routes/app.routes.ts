@@ -12,6 +12,7 @@ import { ProvinceRoutes } from './province.routes';
 import { CityRoutes } from './city.routes';
 import { CompanyRoutes } from './company.routes';
 import { MovementRoutes } from './movement.routes';
+import { ProductInstanceRoutes } from './product-instance-routes';
 
 // import { AuthRoutes } from "./auth/routes";
 // import { BrandRoutes } from "./brands/routes";
@@ -42,6 +43,7 @@ export class AppRoutes {
         router.use('/api/cities', CityRoutes.routes);
         router.use('/api/companies', CompanyRoutes.routes);
         router.use('/api/movements', MovementRoutes.routes);
+        router.use('/api/product-instances', ProductInstanceRoutes.routes);
         // router.use('/api/warehouses', WarehouseRoutes.routes);
         return router;
     }

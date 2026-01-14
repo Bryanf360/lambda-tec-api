@@ -4,6 +4,7 @@ export * from './city.routes';
 export * from './company.routes';
 export * from './movement.routes';
 export * from './part-number.routes';
+export * from './product-instance-routes';
 export * from './product.routes';
 export * from './province.routes';
 export * from './reason.routes';
