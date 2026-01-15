@@ -56,6 +56,7 @@ export class CompanyService {
             ]);
             if (!provinceExists) throw CustomError.notFound('Province not found');
             if (!cityExists) throw CustomError.notFound('City not found');
+            const field = createCompanyDto.type === 'client' ? 'is_client' : 'is_supplier';
             const craetedCompany = await prisma.companies.create({
                 data: {
                     type: createCompanyDto.type,
@@ -68,6 +69,7 @@ export class CompanyService {
                     fk_city_id: createCompanyDto.cityId,
                     address: createCompanyDto.address,
                     description: createCompanyDto.description,
+                    [field]: true,
                 },
             });
             return craetedCompany;
