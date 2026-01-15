@@ -18,6 +18,7 @@ export class ProductInstanceService {
                     product_instance_id: true,
                     serial_number: true,
                     asset_number: true,
+                    status: true,
                 },
                 orderBy: {
                     product_instance_id: 'asc',
