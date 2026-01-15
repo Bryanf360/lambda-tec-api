@@ -26,6 +26,8 @@ const selectedFields = {
     },
     address: true,
     description: true,
+    is_supplier: true,
+    is_client: true,
 };
 
 export class CompanyService {
@@ -80,12 +82,17 @@ export class CompanyService {
         paginationDto: PaginationDto
     ): Promise<any> {
         const { page, limit } = paginationDto;
+        const field = type === 'client' ? 'is_client' : 'is_supplier';
+        const where = {
+            is_deleted: false,
+            [field]: true,
+        };
         try {
             const [companies, total] = await Promise.all([
                 prisma.companies.findMany({
                     where: {
                         is_deleted: false,
-                        type,
+                        [field]: true,
                     },
                     skip: (page - 1) * limit,
                     take: limit,
@@ -94,7 +101,7 @@ export class CompanyService {
                 prisma.companies.count({
                     where: {
                         is_deleted: false,
-                        type,
+                        [field]: true,
                     },
                 }),
             ]);
