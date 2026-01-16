@@ -6,4 +6,5 @@ export * from './product-instance.controller';
 export * from './product.controller';
 export * from './province.controller';
 export * from './reason.controller';
+export * from './report.controller';
 export * from './unit-type.controller';

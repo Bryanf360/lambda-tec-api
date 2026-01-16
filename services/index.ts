@@ -7,4 +7,5 @@ export * from './product-instance.service';
 export * from './product.service';
 export * from './province.service';
 export * from './reason.service';
+export * from './report.service';
 export * from './unit-type.service';

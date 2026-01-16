@@ -8,3 +8,4 @@ export * from './product-instance-routes';
 export * from './product.routes';
 export * from './province.routes';
 export * from './reason.routes';
+export * from './report.routes';
