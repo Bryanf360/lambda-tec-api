@@ -1,20 +1,62 @@
 import { PaginationDto } from '../dtos';
+import { prisma } from '../prisma/client';
 import { CustomError } from '../utils';
 
 export class ReportService {
     async getInstances(paginationDto: PaginationDto) {
         const { page, limit } = paginationDto;
         try {
+            const [instances, total] = await Promise.all([
+                prisma.product_instances.findMany({
+                    // where,
+                    include: {
+                        products: {
+                            include: {
+                                brand: true,
+                                model: true,
+                                part_number: true,
+                                unit_type: true,
+                            },
+                        },
+                        warehouses: true,
+                    },
+                    skip: (page - 1) * limit,
+                    take: limit,
+                    orderBy: {
+                        created_at: 'desc',
+                    },
+                }),
+                prisma.product_instances.count(),
+            ]);
+
+            const data = instances.map((instance) => ({
+                id: instance.product_instance_id,
+                type: instance.products.type === 'equipment' ? 'Equipo' : 'Consumible',
+                name: instance.products.name,
+                description: instance.products.description,
+                brand: instance.products.brand?.name || '',
+                model: instance.products.model?.name || '',
+                partNumber: instance.products.part_number?.name || '',
+                unitType: instance.products.unit_type
+                    ? `${instance.products.unit_type.simbol} - ${instance.products.unit_type.name}`
+                    : '',
+                serialNumber: instance.serial_number || '',
+                assetNumber: instance.asset_number || '',
+                warehouse: instance.warehouses?.name || '-',
+                status: instance.operational_status === 'available' ? 'Disponible' : 'Fuera',
+                createdAt: instance.created_at,
+            }));
+
             return {
-                data: [],
                 meta: {
                     page: page,
                     limit: limit,
-                    total: 0,
+                    total: total,
                     prev:
                         page != 1 ? `/api/reports/instances?page=${page - 1}&limit=${limit}` : null,
                     next: `/api/reports/instances?page=${page + 1}&limit=${limit}`,
                 },
+                data: data,
             };
         } catch (error) {
             console.error(error);
