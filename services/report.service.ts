@@ -4,11 +4,31 @@ import { CustomError } from '../utils';
 
 export class ReportService {
     async getInstances(paginationDto: PaginationDto) {
-        const { page, limit } = paginationDto;
+        const { page, limit, dateFrom, dateTo } = paginationDto;
+        const parseLocalDate = (dateStr: string) => {
+            const [year, month, day] = dateStr.split('-').map(Number);
+            return new Date(year, month - 1, day);
+        };
+        const where: any = {};
+
+        if (dateFrom || dateTo) {
+            where.created_at = {};
+
+            if (dateFrom) {
+                where.created_at.gte = parseLocalDate(dateFrom);
+            }
+
+            if (dateTo) {
+                const end = parseLocalDate(dateTo);
+                end.setHours(23, 59, 59, 999);
+                where.created_at.lte = end;
+            }
+        }
+
         try {
             const [instances, total] = await Promise.all([
                 prisma.product_instances.findMany({
-                    // where,
+                    where,
                     include: {
                         products: {
                             include: {
@@ -26,7 +46,7 @@ export class ReportService {
                         created_at: 'desc',
                     },
                 }),
-                prisma.product_instances.count(),
+                prisma.product_instances.count({ where }),
             ]);
 
             const data = instances.map((instance) => ({

@@ -45,7 +45,7 @@ export class AppRoutes {
         router.use('/api/companies', CompanyRoutes.routes);
         router.use('/api/movements', MovementRoutes.routes);
         router.use('/api/product-instances', ProductInstanceRoutes.routes);
-        router.use('/api/reports/instances', ReportRoutes.routes);
+        router.use('/api/reports', ReportRoutes.routes);
         // router.use('/api/warehouses', WarehouseRoutes.routes);
         return router;
     }

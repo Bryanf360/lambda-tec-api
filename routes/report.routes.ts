@@ -7,7 +7,8 @@ export class ReportRoutes {
         const router = Router();
         const reportService = new ReportService();
         const reportController = new ReportController(reportService);
-        router.get('/', reportController.getInstances);
+        router.get('/instances', reportController.getInstances);
+        router.get('/instances/export', reportController.exportProductInstancesPdf);
         return router;
     }
 }
