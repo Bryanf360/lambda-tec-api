@@ -10,6 +10,10 @@ export class ReportRoutes {
         router.get('/instances', reportController.getInstances);
         router.get('/inputs', reportController.getInputMovementsReport);
         router.get('/inputs/export', reportController.exportInputProductsPdf);
+        // TODO: refactor to join inputs and outputs endpoint a one only endpoint
+        router.get('/outputs', reportController.getOutputMovementsReport);
+        // TODO: refactor to join inputs and outputs reports endpoints
+        router.get('/outputs/export', reportController.exportOutputProductsPdf);
         router.get('/instances/export', reportController.exportProductInstancesPdf);
         return router;
     }
