@@ -14,6 +14,7 @@ import { CompanyRoutes } from './company.routes';
 import { MovementRoutes } from './movement.routes';
 import { ProductInstanceRoutes } from './product-instance-routes';
 import { ReportRoutes } from './report.routes';
+import { UserRoutes } from './user.routes';
 
 // import { AuthRoutes } from "./auth/routes";
 // import { BrandRoutes } from "./brands/routes";
@@ -31,7 +32,7 @@ import { ReportRoutes } from './report.routes';
 export class AppRoutes {
     static get routes(): Router {
         const router = Router();
-        // router.use('/api/users', UserRoutes.routes);
+        router.use('/api/users', UserRoutes.routes);
         router.use('/api/auth', AuthRoutes.routes);
         router.use('/api/dashboard', DashboardRoutes.routes);
         router.use('/api/brands', BrandRoutes.routes);

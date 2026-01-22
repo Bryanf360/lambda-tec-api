@@ -9,3 +9,4 @@ export * from './province.service';
 export * from './reason.service';
 export * from './report.service';
 export * from './unit-type.service';
+export * from './user.service';

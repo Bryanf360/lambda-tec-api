@@ -8,3 +8,4 @@ export * from './province.controller';
 export * from './reason.controller';
 export * from './report.controller';
 export * from './unit-type.controller';
+export * from './user.controller';
