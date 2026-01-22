@@ -43,6 +43,9 @@ export class UserService {
                     where: {
                         status: 'active',
                     },
+                    orderBy: {
+                        created_at: 'desc',
+                    },
                     skip: (page - 1) * limit,
                     take: limit,
                     select: {
