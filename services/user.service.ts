@@ -34,15 +34,8 @@ export class UserService {
         const { page, limit } = paginationDto;
         try {
             const [total, users] = await Promise.all([
-                prisma.users.count({
-                    where: {
-                        status: 'active',
-                    },
-                }),
+                prisma.users.count(),
                 prisma.users.findMany({
-                    where: {
-                        status: 'active',
-                    },
                     orderBy: {
                         created_at: 'desc',
                     },
