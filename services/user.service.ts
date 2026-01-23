@@ -93,6 +93,34 @@ export class UserService {
         }
     }
 
+    async deleteUserById(id: number) {
+        const userExists = await prisma.users.findFirst({
+            where: {
+                user_id: id,
+            },
+        });
+        if (!userExists) throw CustomError.notFound(`Usuario con id ${id} no encontrado`);
+        try {
+            const deletedUser = await prisma.users.update({
+                where: {
+                    user_id: id,
+                },
+                select: {
+                    user_id: true,
+                    names: true,
+                    lastnames: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                },
+                data: { status: 'inactive' },
+            });
+            return deletedUser;
+        } catch (error) {
+            throw CustomError.internalServer(` ${error} `);
+        }
+    }
+
     public async loginUser(loginUserDto: LoginUserDto) {
         const userExists = await prisma.users.findFirst({
             where: { email: loginUserDto.email },

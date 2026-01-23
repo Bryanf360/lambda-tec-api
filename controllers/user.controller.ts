@@ -76,19 +76,16 @@ export class UserController {
 
     public deleteUserById = async (req: Request, res: Response): Promise<any> => {
         const { id } = req.params;
-        if (isNaN(+id)) return res.json({ error: 'Number ID no valid!' });
-        const user = await prisma.users.findFirst({
-            where: {
-                user_id: +id,
-            },
-        });
-        if (!user) return res.status(404).json({ error: `User with id ${id} not found!` });
-        const deletedUser = await prisma.users.delete({
-            where: {
-                user_id: +id,
-            },
-        });
-        res.json({ msg: 'Updated user!', deletedUser });
+        this.userService
+            .deleteUserById(+id)
+            .then((user) =>
+                res.status(200).json({
+                    success: true,
+                    message: 'Usuario inactivado exitosamente',
+                    data: user,
+                })
+            )
+            .catch((error) => this.handleError(error, res));
     };
 
     private handleError = (error: unknown, res: Response) => {
