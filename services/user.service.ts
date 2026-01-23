@@ -3,7 +3,7 @@ import { CustomError } from '../utils';
 
 import { RegisterUserDto } from '../dtos/create-user.dto';
 import { BcryptJsAdapter, JWTAdapter } from '../config';
-import { LoginUserDto, PaginationDto } from '../dtos';
+import { LoginUserDto, PaginationDto, UpdateUserDto } from '../dtos';
 
 export class UserService {
     constructor() {
@@ -64,6 +64,32 @@ export class UserService {
             };
         } catch (error) {
             throw CustomError.internalServer('Internal server error');
+        }
+    }
+
+    public async updateUserById(id: number, updateUserDto: UpdateUserDto): Promise<any> {
+        try {
+            const userExists = await prisma.users.findFirst({
+                where: {
+                    user_id: id,
+                },
+            });
+            if (!userExists) throw CustomError.notFound(`El usuario con id ${id} no encontrado`);
+            const emailExists = await prisma.users.findFirst({
+                where: {
+                    email: updateUserDto.email,
+                },
+            });
+            if (emailExists && emailExists.user_id !== userExists.user_id)
+                throw CustomError.notFound(`El usuario con email ${updateUserDto.email} ya existe`);
+            const updatedUser = await prisma.users.update({
+                where: { user_id: id },
+                data: updateUserDto!.values,
+            });
+            return updatedUser;
+        } catch (error) {
+            if (error instanceof CustomError) throw error;
+            throw CustomError.internalServer('Error interno del servidor');
         }
     }
 

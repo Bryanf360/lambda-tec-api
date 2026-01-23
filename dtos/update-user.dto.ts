@@ -5,11 +5,11 @@ export class UpdateUserDto {
         public readonly email: string,
         public readonly role: 'admin' | 'technician',
         public readonly password: string,
-        public readonly status: 'active' | 'inactive',
+        public readonly status: 'active' | 'inactive'
     ) {}
 
     get values() {
-        const user: {[key: string]: any} = {};
+        const user: { [key: string]: any } = {};
         if (this.names) user.names = this.names;
         if (this.lastnames) user.lastnames = this.lastnames;
         if (this.email) user.email = this.email;
@@ -19,18 +19,9 @@ export class UpdateUserDto {
         return user;
     }
 
-    static create(props: {[key: string]: any}): [string?, UpdateUserDto?] {
-        const { id, names, lastnames, email, role, password, status } = props;
-        if (isNaN(+id)) return ['Number ID no valid!'];
+    static create(props: { [key: string]: any }): [string?, UpdateUserDto?] {
+        const { names, lastnames, email, role, password, status } = props;
 
-        return [undefined, new UpdateUserDto(
-            names,
-            lastnames,
-            email,
-            role,
-            password,
-            status
-        )]
+        return [undefined, new UpdateUserDto(names, lastnames, email, role, password, status)];
     }
-
 }

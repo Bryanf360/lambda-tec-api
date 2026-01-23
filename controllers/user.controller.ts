@@ -55,23 +55,23 @@ export class UserController {
 
     public updateUserById = async (req: Request, res: Response): Promise<any> => {
         const { id } = req.params;
-        const [error, createdUser] = UpdateUserDto.create({ ...req.body, id });
-
-        if (error) return res.status(400).json({ error });
-
-        const user = await prisma.users.findFirst({
-            where: {
-                user_id: +id,
-            },
-        });
-        if (!user) return res.status(404).json({ error: `User with id ${id} not found!` });
-
-        const updatedUser = await prisma.users.update({
-            where: { user_id: +id },
-            data: createdUser!.values,
-        });
-
-        res.json({ msg: 'Updated user!', updatedUser });
+        const [error, updatedUserDto] = UpdateUserDto.create(req.body);
+        if (error)
+            return res.status(400).json({
+                success: false,
+                message: error,
+                error: 'ValidationError',
+            });
+        this.userService
+            .updateUserById(+id, updatedUserDto!)
+            .then((user) =>
+                res.status(200).json({
+                    success: true,
+                    message: 'Usuario actualizado exitosamente',
+                    data: user,
+                })
+            )
+            .catch((error) => this.handleError(error, res));
     };
 
     public deleteUserById = async (req: Request, res: Response): Promise<any> => {
