@@ -15,6 +15,7 @@ export * from './update-brand.dto';
 export * from './update-company.dto';
 export * from './update-model.dto';
 export * from './update-part-nubmer.dto';
+export * from './update-user-password.dto';
 export * from './update-product.dto';
 export * from './update-reason.dto';
 export * from './update-unit-type.dto';

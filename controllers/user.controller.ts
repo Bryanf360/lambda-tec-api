@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PaginationDto, RegisterUserDto, UpdateUserDto } from '../dtos';
+import { PaginationDto, RegisterUserDto, UpdateUserDto, UpdateUserPasswordDto } from '../dtos';
 import { prisma } from '../prisma/client';
 import { UserService } from '../services';
 import { CustomError } from '../utils';
@@ -47,6 +47,23 @@ export class UserController {
                 res.json({
                     success: true,
                     message: 'User registered succesfully',
+                    data: result,
+                })
+            )
+            .catch((error) => this.handleError(error, res));
+    };
+
+    public changePassword = async (req: Request, res: Response): Promise<any> => {
+        const { id } = req.params;
+        const [error, updateUserPasswordDto] = UpdateUserPasswordDto.create(req.body);
+
+        if (error) return res.status(400).json({ error });
+        this.userService
+            .changePasswordByUserId(+id, updateUserPasswordDto!)
+            .then((result) =>
+                res.json({
+                    success: true,
+                    message: 'Contraseña actualizada correctamente',
                     data: result,
                 })
             )

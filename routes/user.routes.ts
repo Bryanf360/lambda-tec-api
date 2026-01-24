@@ -9,6 +9,7 @@ export class UserRoutes {
         const userService = new UserService();
         const userController = new UserController(userService);
         router.post('/', userController.createUser);
+        router.patch('/:id/password', userController.changePassword);
         router.get('/', userController.getUsers);
         router.get('/:id', userController.getUserById);
         router.put('/:id', userController.updateUserById);
