@@ -10,3 +10,4 @@ export * from './province.routes';
 export * from './reason.routes';
 export * from './report.routes';
 export * from './user.routes';
+export * from './warehouse.routes';

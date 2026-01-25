@@ -15,6 +15,7 @@ import { MovementRoutes } from './movement.routes';
 import { ProductInstanceRoutes } from './product-instance-routes';
 import { ReportRoutes } from './report.routes';
 import { UserRoutes } from './user.routes';
+import { WarehouseRoutes } from './warehouse.routes';
 
 // import { AuthRoutes } from "./auth/routes";
 // import { BrandRoutes } from "./brands/routes";
@@ -47,7 +48,7 @@ export class AppRoutes {
         router.use('/api/movements', MovementRoutes.routes);
         router.use('/api/product-instances', ProductInstanceRoutes.routes);
         router.use('/api/reports', ReportRoutes.routes);
-        // router.use('/api/warehouses', WarehouseRoutes.routes);
+        router.use('/api/warehouses', WarehouseRoutes.routes);
         return router;
     }
 }
