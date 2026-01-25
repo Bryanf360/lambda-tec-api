@@ -48,6 +48,28 @@ export class ProductController {
             .catch((error) => handleError(error, res));
     };
 
+    public getProductInstances = async (req: Request, res: Response): Promise<any> => {
+        const { page = 1, limit = 10, search = '' } = req.query;
+        const { productId } = req.params;
+        const [error, paginationDto] = PaginationDto.create(+page, +limit);
+        if (error)
+            return res.status(400).json({
+                success: false,
+                message: error,
+                error: 'ValidationError',
+            });
+        const normalizedSearch: string = normalizeSearch(search);
+        this.productService
+            .getProductInstancesByProductId(+productId, normalizedSearch, paginationDto!)
+            .then((result) =>
+                res.status(200).json({
+                    success: true,
+                    ...result,
+                })
+            )
+            .catch((error) => handleError(error, res));
+    };
+
     public getProductStocks = async (req: Request, res: Response): Promise<any> => {
         const { page = 1, limit = 10, search = '' } = req.query;
         const [error, paginationDto] = PaginationDto.create(+page, +limit);

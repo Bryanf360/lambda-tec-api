@@ -170,6 +170,228 @@ export class ProductService {
         }
     }
 
+    public async getProductInstancesByProductId(
+        productId: number,
+        search: string,
+        paginationDto: PaginationDto
+    ): Promise<any> {
+        try {
+            const { page, limit } = paginationDto;
+            const skip = (page - 1) * limit;
+            // 1. Producto base
+            const product = await prisma.products.findUnique({
+                where: { id: productId },
+                select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    description: true,
+                    brand: { select: { name: true } },
+                    model: { select: { name: true } },
+                    part_number: { select: { name: true } },
+                    unit_type: { select: { name: true } },
+                },
+            });
+
+            if (!product) throw CustomError.badRequest('Producto no encontrado');
+
+            // Helpers
+            const like = (val: string) => `%${val}%`;
+
+            // ==========================
+            // EQUIPMENT
+            // ==========================
+            if (product.type === 'equipment') {
+                const where: any = {
+                    fk_product_id: productId,
+                    fk_warehouse_id: { not: null },
+                };
+
+                // Búsqueda en equipo
+                if (search) {
+                    where.OR = [
+                        { serial_number: { contains: search } },
+                        { asset_number: { contains: search } },
+                        {
+                            warehouses: {
+                                is: {
+                                    name: { contains: search },
+                                },
+                            },
+                        },
+                    ];
+                }
+
+                const [totalCount, instances] = await Promise.all([
+                    prisma.product_instances.count({ where }),
+                    prisma.product_instances.findMany({
+                        where,
+                        include: {
+                            warehouses: { select: { name: true } },
+                        },
+                        orderBy: { created_at: 'asc' },
+                        skip,
+                        take: limit,
+                    }),
+                ]);
+
+                const rows = instances.map((i) => ({
+                    serial: i.serial_number || '-',
+                    assetNumber: i.asset_number || '-',
+                    name: product.name,
+                    type: 'Equipo',
+                    brand: product.brand?.name || '-',
+                    model: product.model?.name || '-',
+                    partNumber: product.part_number?.name || '-',
+                    unitType: product.unit_type?.name || '-',
+                    description: product.description || '-',
+                    warehouse: i.warehouses?.name || '-',
+                    quantity: 1,
+                }));
+
+                return {
+                    meta: {
+                        page: page,
+                        limit: limit,
+                        total: totalCount,
+                        prev:
+                            page - 1 > 0
+                                ? `/api/products/${productId}/instances?page=${page - 1}&limit=${limit}`
+                                : null,
+                        next: `/api/products/${productId}/instances?page=${page + 1}&limit=${limit}`,
+                    },
+                    data: rows,
+                };
+            }
+
+            // ==========================
+            // CONSUMABLE (SQL seguro)
+            // ==========================
+
+            // COUNT para paginación
+            const countResult = search
+                ? await prisma.$queryRaw<any[]>`
+                    SELECT COUNT(*) AS total
+                    FROM (
+                        SELECT w.warehouse_id
+                        FROM movement_details md
+                        JOIN movements m
+                        ON m.movement_id = md.fk_movement_id
+                        LEFT JOIN warehouses w
+                        ON w.warehouse_id = md.fk_warehouse_id
+                        WHERE md.fk_product_id = ${productId}
+                        AND LOWER(w.name) LIKE LOWER(${`%${search}%`})
+                        GROUP BY w.warehouse_id
+                        HAVING SUM(
+                        CASE
+                            WHEN m.type = 'input' THEN md.quantity
+                            ELSE -md.quantity
+                        END
+                        ) > 0
+                    ) t
+                `
+                : await prisma.$queryRaw<any[]>`
+                    SELECT COUNT(*) AS total
+                    FROM (
+                        SELECT w.warehouse_id
+                        FROM movement_details md
+                        JOIN movements m
+                        ON m.movement_id = md.fk_movement_id
+                        LEFT JOIN warehouses w
+                        ON w.warehouse_id = md.fk_warehouse_id
+                        WHERE md.fk_product_id = ${productId}
+                        GROUP BY w.warehouse_id
+                        HAVING SUM(
+                        CASE
+                            WHEN m.type = 'input' THEN md.quantity
+                            ELSE -md.quantity
+                        END
+                        ) > 0
+                    ) t
+                `;
+
+            const totalCount = Number(countResult[0]?.total || 0);
+
+            // DATA paginada
+            const rowsResult = search
+                ? await prisma.$queryRaw<any[]>`
+                        SELECT
+                            w.name AS warehouse,
+                            SUM(
+                            CASE
+                                WHEN m.type = 'input' THEN md.quantity
+                                ELSE -md.quantity
+                            END
+                            ) AS quantity
+                        FROM movement_details md
+                        JOIN movements m
+                            ON m.movement_id = md.fk_movement_id
+                        LEFT JOIN warehouses w
+                            ON w.warehouse_id = md.fk_warehouse_id
+                        WHERE md.fk_product_id = ${productId}
+                            AND LOWER(w.name) LIKE LOWER(${`%${search}%`})
+                        GROUP BY w.name
+                        HAVING quantity > 0
+                        ORDER BY w.name ASC
+                        LIMIT ${limit}
+                        OFFSET ${skip}
+                    `
+                : await prisma.$queryRaw<any[]>`
+                        SELECT
+                            w.name AS warehouse,
+                            SUM(
+                            CASE
+                                WHEN m.type = 'input' THEN md.quantity
+                                ELSE -md.quantity
+                            END
+                            ) AS quantity
+                        FROM movement_details md
+                        JOIN movements m
+                            ON m.movement_id = md.fk_movement_id
+                        LEFT JOIN warehouses w
+                            ON w.warehouse_id = md.fk_warehouse_id
+                        WHERE md.fk_product_id = ${productId}
+                        GROUP BY w.name
+                        HAVING quantity > 0
+                        ORDER BY w.name ASC
+                        LIMIT ${limit}
+                        OFFSET ${skip}
+                    `;
+
+            const rows = rowsResult.map((r) => ({
+                serial: '-',
+                assetNumber: '-',
+                name: product.name,
+                type: 'Consumible',
+                brand: product.brand?.name || '-',
+                model: product.model?.name || '-',
+                partNumber: product.part_number?.name || '-',
+                unitType: product.unit_type?.name || '-',
+                description: product.description || '-',
+                warehouse: r.warehouse || '-',
+                quantity: Number(r.quantity),
+            }));
+
+            return {
+                meta: {
+                    page: page,
+                    limit: limit,
+                    total: totalCount,
+                    prev:
+                        page - 1 > 0
+                            ? `/api/products/${productId}/instances?page=${page - 1}&limit=${limit}`
+                            : null,
+                    next: `/api/products/${productId}/instances?page=${page + 1}&limit=${limit}`,
+                },
+                data: rows,
+            };
+        } catch (error) {
+            console.log('error: ', error);
+            if (error instanceof CustomError) throw error;
+            throw CustomError.internalServer('Internal server error');
+        }
+    }
+
     public async getProductStocks(search: string, paginationDto: PaginationDto): Promise<any> {
         const { page, limit } = paginationDto;
         const typeTranslations = {
