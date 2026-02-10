@@ -12,6 +12,20 @@ services:
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
     volumes:
-      - ./mariadb:/var/lib/mysql:Z
+      - mariadb_data:/var/lib/mysql
     ports:
-      - 8080:3306
+      - 3306:3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mariadb       # nombre exacto de tu servicio MariaDB
+      PMA_PORT: 3306          # puerto REAL dentro del contenedor (no el expuesto)
+      PMA_ARBITRARY: 1        # permite conectarse a otros hosts si quieres
+
+volumes:
+  mariadb_data:
